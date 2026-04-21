@@ -1,30 +1,42 @@
 from mlx_lm import load, generate
+import re
 
 model_id = "mlx-community/gemma-4-e2b-it-4bit"
 
 print("⏳ Ładowanie modelu MLX...")
 model, tokenizer = load(model_id)
 
-# Gemma 4 oczekuje konkretnego formatu konwersacji
-messages = [
-    {"role": "user", "content": "Cześć! Jeśli mnie słyszysz, napisz: 'Gemma 4 melduje się na pokładzie Maca M1!'"}
-]
+history = []
 
-# Tworzymy prompt używając szablonu modelu
-prompt = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+print("\n🤖 Gemma-4 gotowa! (Wpisz 'wyjdź', aby zakończyć)")
 
-print("✍️ Generowanie...")
-response = generate(
-    model, 
-    tokenizer, 
-    prompt=prompt, 
-    max_tokens=200, 
-    verbose=True
-)
+while True:
+    user_input = input("\n👤 Ty: ")
+    
+    if user_input.lower() in ["exit", "quit", "wyjdź"]:
+        print("Pa pa!")
+        break
 
-# Jeśli generate samo nie wypisało tekstu (zależy od wersji), robimy to ręcznie:
-if response:
-    print("\n--- ODPOWIEDŹ ---")
-    print(response)
-else:
-    print("\nBłąd: Model nadal nie wygenerował tekstu.")
+    history.append({
+        "role": "user", 
+        "content": f"{user_input} (Odpowiedz po polsku, dość krótko, bez procesu myślowego, zawsze użyj 'BRRRRRRRR' przed rozpoczęciem ostatecznej odpowiedzi)"
+    })
+
+    
+    prompt = tokenizer.apply_chat_template(history, tokenize=False, add_generation_prompt=True)
+
+    print("✍️ Generowanie...")
+    
+    response = generate(
+        model, 
+        tokenizer, 
+        prompt=prompt,
+        max_tokens=1250
+    )
+
+    response_clean=re.split(r"BRRRRRRRR", response, flags=re.IGNORECASE)[-1].strip()
+
+    print(response_clean)
+
+    history.append({"role": "user", "content": user_input})
+    history.append({"role": "assistant", "content": response_clean})
